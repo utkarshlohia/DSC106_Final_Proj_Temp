@@ -1,11 +1,70 @@
 <script>
   import Scrolly from "./Scrolly.svelte";
-  import { select } from "d3-selection";
+  import { select, selectAll } from "d3-selection";
+  import { scaleLinear } from "d3-scale";
+  
 
-  let value;
+  // find width of svg and use it
+  let xScale = scaleLinear().domain([0, 235]).range([0, 300]);
+
+  let data = [
+  {x:235, y:235},
+  {x:364, y:465},
+  {x:234, y:645},
+  {x:654, y:567},
+  {x:233, y:745},
+  {x:33, y:744},
+  {x:133, y:7},
+  {x:23, y:7},
+  {x:3, y:744},
+  {x:234, y:234}
+];
+
+
+function getRandomInt(max) {
+    return Math.floor(Math.random() * max);
+}
+
+function assignRandomXY(data) {
+  let assignedData = [];
+
+  data.forEach(pair => {
+    const x = xScale(getRandomInt(pair['x']));
+    const y = xScale(getRandomInt(pair['y']));
+    assignedData.push({ x: x, y: y });
+  });
+
+  return assignedData;
+}
+
+function permute(data) {
+  let assignedData = [];
+
+  data.forEach((pair, i) => {
+    if i % 2 == 0 ?
+    const x = xScale(getRandomInt(pair['x']));
+    const y = xScale(getRandomInt(pair['y']));
+    assignedData.push({ x: x, y: y });
+    : return
+  });
+
+  return assignedData;
+}
+
+let value = 0
+
+
+
+let randomAssignedData = assignRandomXY(data);
+console.log('ete', randomAssignedData);
+
+
+  
 
   // Initial setup for diamonds with positions and events
-  const diamonds = new Array(20).fill(null).map((_, i) => {
+  function drawDiamonds() {
+    let coords = assignRandomXY(data);
+    data = new Array(20).fill(null).map((_, i) => {
     const xOffset = 50 + (i % 10) * 30; // Staggering the diamonds horizontally in rows of 10
     const yOffset = 100 + Math.floor(i / 10) * 50; // Two rows for initial positions
     return {
@@ -15,6 +74,9 @@
       groupBPos: [400 + (i % 10) * 30, 100], // Group B on the right side
     };
   });
+  } 
+
+  // function to make random positins
 
   // Paragraph text for scrolly
   $: steps = [
@@ -102,6 +164,39 @@
     `,
   ];
 
+
+
+
+    // Update diamonds based on scroll value
+  function updateDiamondsNew() {
+    const svg = select("#chart1");
+    svg.selectAll("*").remove(); // Clear previous SVG elements
+
+    data.forEach((diamond, index) => {
+      const pos = [diamond.x, diamond.y];
+      const g = svg.append('g').attr('class', 'diamond').attr('transform', `translate(${pos[0]}, ${pos[1]}) `)
+
+      g.append('path')
+        .attr('class', 'diamond-path')
+        .attr('x', diamond.x)
+        .attr('y', diamond.y)
+        .attr('d', "M17 20, L40 20, L50 40, L27 60, L5 40, Z M5 40, L50 40, M27 60, L40 20, M27 60, L17 20, M22 40, L28 21, L33 40")
+        .attr('transform', `scale(0.5)`)
+        .attr('style', `fill:${diamond.color}; stroke:grey; stroke-width:1`); 
+
+      const label = g.append('text')
+      label.text(pos[0]).attr('dy', 50)
+    });
+    }
+
+  function moveDiamonds() {
+    // redraw dataset
+    let randomAssignedData = assignRandomXY(data);
+    let pos = [200, 200]
+    selectAll('.diamond')
+     .attr('transform', (d, i) => `translate(${randomAssignedData[i]['x']}, ${randomAssignedData[i]['y']}) scale(0.95)`)
+  }
+
   // Update diamonds based on scroll value
   function updateDiamonds() {
     const svg = select("#chart1");
@@ -116,9 +211,29 @@
     });
   }
 
+  const target2event = {
+    0: () => {
+      let randomAssignedData = assignRandomXY(data);
+      console.log('ete', randomAssignedData);
+      updateDiamondsNew()
+    },
+    1: () => {
+      // updateDiamonds();
+      moveDiamonds()
+      let randomAssignedData = assignRandomXY(data);
+console.log('ete', randomAssignedData);
+    },
+    2: () => {
+      moveDiamonds()
+      let randomAssignedData = assignRandomXY(data);
+      console.log('ete', randomAssignedData);
+    }
+  }
+
   // Reactive function to redraw diamonds when scrolling
   $: if (value !== undefined) {
-    updateDiamonds();
+    target2event[value]?.();
+  
   }
 </script>
 
@@ -236,5 +351,10 @@
     .spacer {
       height: 100vh;
     }
+  }
+
+
+  path.diamond {
+    transition: all 1s;
   }
 </style>
